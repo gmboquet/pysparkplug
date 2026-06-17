@@ -73,6 +73,10 @@ class NegativeBinomialDistribution(SequenceEncodableProbabilityDistribution):
                 log_partition=cls.exp_family_log_partition,
                 base_measure_from_params=cls.exp_family_base_measure_from_params,
                 legacy_sufficient_statistics=cls.backend_legacy_sufficient_statistics,
+                # h(x) = lgamma(x+r) - lgamma(r) - log(x!) depends on the per-component shape r,
+                # so the fixed-base stacked loop does not apply; stacked scoring uses the backend
+                # hooks below while the scalar canonical map still uses the spec above.
+                fixed_base=False,
             ),
         )
 
