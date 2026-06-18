@@ -4,9 +4,12 @@ name: Publish
 # stored as secrets. Publishing to PyPI runs only when a GitHub Release is published; a manual
 # workflow_dispatch can build-and-check (and optionally push to TestPyPI) without touching PyPI.
 #
+# The PyPI distribution name is "pysp-learn" (the import package is still `pysp`); the GitHub repo
+# is gmboquet/pysparkplug.
 # One-time setup (PyPI side, done by the maintainer):
-#   1. Confirm the project name "pysparkplug" is available or owned by you (https://pypi.org/project/pysparkplug/).
-#   2. On PyPI, add a Trusted Publisher (a "pending" publisher if the project does not exist yet):
+#   1. Confirm the project name "pysp-learn" is available or owned by you (https://pypi.org/project/pysp-learn/).
+#   2. On PyPI, add a Trusted Publisher for the "pysp-learn" project (a "pending" publisher if it
+#      does not exist yet):
 #        Owner: gmboquet   Repository: pysparkplug
 #        Workflow: publish.yml   Environment: pypi
 #      and likewise a TestPyPI pending publisher with Environment: testpypi if you want the test path.
