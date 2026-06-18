@@ -80,6 +80,16 @@ class MarginalFieldProfile:
     validation_notes: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
 
+    def model_weights(self) -> dict[str, float]:
+        """Return Schwarz (BIC) model weights over the scored candidates, summing to 1.
+
+        From per-observation code lengths ``L_i`` (``model_scores_bits``) and the observed count
+        ``n``, ``BIC_i = 2 * n * ln2 * L_i`` so the Schwarz weight is
+        ``w_i proportional to exp(-0.5 * (BIC_i - min BIC)) = exp(-n * ln2 * (L_i - min L))`` -- an
+        approximate posterior probability over the candidate models. Empty when nothing was scored.
+        """
+        return _bic_weights(self.model_scores_bits, self.observed_count)
+
     def summary(self) -> dict[str, Any]:
         return {
             "path": format_path(self.path),
@@ -103,6 +113,7 @@ class MarginalFieldProfile:
             "integer_max": self.integer_max,
             "integer_density": self.integer_density,
             "model_scores_bits": dict(self.model_scores_bits),
+            "model_weights": self.model_weights(),
             "model_score_gap_bits": self.model_score_gap_bits,
             "validation_scores_bits": dict(self.validation_scores_bits),
             "validation_recommendation": self.validation_recommendation,
@@ -420,6 +431,22 @@ def _numeric_model_recommendation(scores: dict[str, float], margin: float = _NUM
         return "gaussian"
     best = min(alternatives, key=lambda k: (alternatives[k], k))
     return best if alternatives[best] < scores["gaussian"] - margin else "gaussian"
+
+
+def _bic_weights(scores: dict[str, float], nobs: int) -> dict[str, float]:
+    """Return normalized Schwarz (BIC) weights from per-observation code lengths.
+
+    ``BIC_i = 2 * n * ln2 * L_i`` for code length ``L_i`` (bits/obs), so the Schwarz weight is
+    ``w_i proportional to exp(-0.5 * (BIC_i - min BIC)) = exp(-n * ln2 * (L_i - min L))`` (all
+    exponents <= 0, so no overflow). Returns ``{}`` for empty input.
+    """
+    if not scores:
+        return {}
+    n = max(int(nobs), 1)
+    best = min(scores.values())
+    raw = {k: math.exp(-n * math.log(2.0) * (v - best)) for k, v in scores.items()}
+    total = sum(raw.values()) or 1.0
+    return {k: w / total for k, w in raw.items()}
 
 
 def _score_gap_bits(scores: dict[str, float], recommendation: str) -> float | None:
